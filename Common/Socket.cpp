@@ -11,76 +11,108 @@
 
 #include "SocketException.h"
 
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sstream>
 #include <cstring>
 #include <cassert>
+#include <iostream>
+
 
 namespace Common
 {
 
 //-----------------------------------------------------------------------------
-Socket::Socket(const std::string& ipAddr)
+Socket::Socket(const std::string& ipAddr, uint16_t port)
     : mAddr(ipAddr)
+    , mPort(port)
 {
-   mSocket = socket(AF_INET, SOCK_STREAM, 0);
-   if (mSocket < 0)
-   {
-       std::ostringstream str;
-       str << "Failure to create the socket object: " << std::strerror(errno);
-       throw Exception(ipAddr, str.str());
-   }
+    std::memset(&mSockAddrIn, 0, sizeof(mSockAddrIn));
 
-   // Check the address for validity here, for early failure.
-   
-    struct sockaddr_in addr = {0};
-    if (inet_aton(mAddr.c_str(), &addr.sin_addr) == 0)
+    mSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (mSocket < 0)
     {
         std::ostringstream str;
-        str << "Invalid IPv4 address: " << ipAddr;
+        str << "Failure to create the socket object: " << std::strerror(errno);
         throw Exception(ipAddr, str.str());
     }
+
+    // Check the address for validity here, for early failure.
+    
+    mSockAddrIn.sin_family = AF_INET;
+    if (inet_aton(mAddr.c_str(), &mSockAddrIn.sin_addr) == 0)
+    {
+        std::ostringstream str;
+        str << "Invalid IPv4 address";
+        throw Exception(mAddr, str.str());
+    }
+
+    mSockAddrIn.sin_port = htons(mPort);
 }
+
+//-----------------------------------------------------------------------------
+Socket::Socket(Socket&& rhs) noexcept
+{
+    *this = std::move(rhs);
+}
+
+//-----------------------------------------------------------------------------
+Socket& Socket::operator =(Socket&& rhs) noexcept
+{
+    mSocket = rhs.mSocket;
+    rhs.mSocket = -1;       // The resource is moved
+    
+    mAddr = std::move(rhs.mAddr);
+    mPort = std::move(rhs.mPort);
+    mState = std::move(rhs.mState);
+    mSockAddrIn = std::move(rhs.mSockAddrIn);
+
+    return *this;
+}
+
 
 //-----------------------------------------------------------------------------
 Socket::~Socket()
 {
-    // Close the socket handle
-    close(mSocket);
+    if (mSocket != -1)
+    {
+        // If we haven't moved this socket...
 
-    // Even though this object is going out of existence, explicitely set this
-    // value to invalid to ensure a stray pointer does not try to access it.
+        // Close the socket handle
+        close(mSocket);
+    }
+
     mSocket = -1;
+    mState = State::Destroyed;
 }
 
 //-----------------------------------------------------------------------------
-void Socket::bind(uint16_t port)
+void Socket::bind()
 {
-    // Format the address information to the sockaddr_in structure.
-    // Validity of mAddr and the results of inet_aton should have been verified
-    // in the constructor. Verified here with an assert.
-    struct sockaddr_in addr = {0};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-    auto inet_result = inet_aton(mAddr.c_str(), &addr.sin_addr);
-    assert(inet_result != 0);
-
-    // Bind the address and port to the socket
-    if (::bind(mSocket, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0)
+    if (mState != State::Created)
     {
-        throw Exception(mAddr, port, std::strerror(errno));
+        throw Exception(mAddr, mPort, "The Socket must be in a created state to bind.");
     }
 
-    // Assign the port member to non-zero as part of indicating a successfully bound socket
-    mPort = port;
+    // Bind the address and port to the socket
+    if (::bind(mSocket, reinterpret_cast<struct sockaddr*>(&mSockAddrIn), sizeof(mSockAddrIn)) < 0)
+    {
+        std::ostringstream str;
+        str << "Failure to bind: " << std::strerror(errno);
+        throw Exception(mAddr, mPort, str.str());
+    }
+
+    mState = State::Bound;
 }
 
 //-----------------------------------------------------------------------------
 void Socket::listen(int backlog)
 {
+    if (mState != State::Bound)
+    {
+        throw Exception(mAddr, mPort, "The Socket must be in a bound state to enter listen mode.");
+    }
+
     // Put the socket into listening mode.
     if (::listen(mSocket, backlog) < 0)
     {
@@ -88,29 +120,24 @@ void Socket::listen(int backlog)
     }
 
     // Reflect that the socket is in listen mode
-    mListening = true;
+    mState = State::Listening;
 }
 
 //-----------------------------------------------------------------------------
 std::optional<Socket> Socket::accept()
 {
-    // First, ensure that we are bound and listening. The accept would fail anyway,
-    // but these checks may be more clear as to why. This would be considered a logic failure.
-    if (mPort == 0)
+    if (mState != State::Listening)
     {
-        throw Exception(mAddr, "The socket must first be bound to a port before calling accept()");
-    }
-
-    if (!mListening)
-    {
-        throw Exception(mAddr, mPort, "The socket must be in listening mode before calling accept()");
+        throw Exception(mAddr, mPort, "The Socket must be in a listening state to accept connections");
     }
 
     std::optional<Socket> result;
 
-    struct sockaddr_in addr = {0};
+    // Create a new address instance to receive the connection.
+    struct sockaddr_in addr;
     socklen_t len = sizeof(addr);
-    if (::accept(mSocket, reinterpret_cast<sockaddr*>(&addr), &len) < 0)
+    auto acceptResult = ::accept(mSocket, reinterpret_cast<sockaddr*>(&addr), &len);
+    if (acceptResult < 0)
     {
         // On error...
 
@@ -127,31 +154,54 @@ std::optional<Socket> Socket::accept()
     else
     {
         // On success...
-        
-        mAddr = inet_ntoa(addr.sin_addr);
-
-        result = Socket(mAddr);
-        result.value().mPort = ntohs(addr.sin_port);
+       
+        // Initialize the result socket with the connection information.
+        result = Socket(addr, acceptResult);
     }
 
     return result;
 }
 
 //-----------------------------------------------------------------------------
-void Socket::write(const void* buffer, size_t len)
+void Socket::connect()
 {
-    // Check for logic failure
-    if (mListening)
+    if (mState != State::Created)
     {
-        throw Exception(mAddr, mPort, "Cannot write to this socket because it is in listen mode.");
+        throw Exception(mAddr, mPort, "The Socket must be in a Created state in order to form a connection.");
     }
 
-    if (mPort == 0)
+    if (::connect(mSocket, reinterpret_cast<sockaddr*>(&mSockAddrIn), sizeof(mSockAddrIn)) < 0)
     {
-        throw Exception(mAddr, "Cannot write to this socket because it is either unbound or disconnected.");
+        if (errno == ECONNREFUSED)
+        {
+            // Throw a little addition type information around this condition
+            throw ConnectionRefusalException(mAddr, mPort);
+        }
+        else
+        {
+            std::ostringstream str;
+            str << "Failure to connect: " << std::strerror(errno);
+            throw Exception(mAddr, mPort, str.str());
+        }
+    }
+    else
+    {
+        // On success...
+        
+        // Set the state to connected
+        mState = State::Connected;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void Socket::send(const void* buffer, size_t len)
+{
+    if (mState != State::Connected)
+    {
+        throw Exception(mAddr, mPort, "The Socket must be in a connected state to write.");
     }
 
-    if (::write(mSocket, buffer, len) < 0)
+    if (::send(mSocket, buffer, len, 0) < 0)
     {
         std::ostringstream str;
         str << "Error while writing: " << std::strerror(errno);
@@ -160,33 +210,23 @@ void Socket::write(const void* buffer, size_t len)
 }
 
 //-----------------------------------------------------------------------------
-std::optional<size_t> Socket::read(void* buffer, size_t len)
+std::optional<size_t> Socket::recv(void* buffer, size_t len)
 {
-    // Check for logic failure
-    if (mListening)
+    if (mState != State::Connected)
     {
-        throw Exception(mAddr, mPort, "Cannot write to this socket because it is in listen mode.");
-    }
-
-    if (mPort == 0)
-    {
-        throw Exception(mAddr, "Cannot write to this socket because it is either unbound or disconnected.");
+        throw Exception(mAddr, mPort, "The Socket must be in a connected state in order to receive data.");
     }
 
     std::optional<size_t> result;
 
-    auto readResult = ::read(mSocket, buffer, len);
-    if (readResult == static_cast<ssize_t>(len))
+    auto readResult = ::recv(mSocket, buffer, len, 0);
+    if (readResult <= 0)
     {
-        // On success...
-        result = static_cast<size_t>(readResult);
-    }
-    // Else, interpret the failure...
-    else if (readResult < 0)
-    {
-        if (errno == ECONNABORTED)
+        // On failure...
+        
+        if (readResult == 0 || errno == ECONNABORTED)
         {
-            // Fall out unset as part of disconnection logic...
+            // Fall out with 'result' unset as part of disconnection logic...
         }
         else
         {
@@ -196,9 +236,32 @@ std::optional<size_t> Socket::read(void* buffer, size_t len)
             throw Exception(mAddr, mPort, str.str());
         }
     }
+    else
+    {
+        // On success...
+        result = static_cast<size_t>(readResult);
+    }
 
     return result;
 }
+
+//-----------------------------------------------------------------------------
+// Private Methods
+//-----------------------------------------------------------------------------
+
+/// @internal
+/// @brief Construct a Socket based on information from an accepted connection
+/// @param[in] addr     - A sockaddr_in with information about the connection
+/// @param[in] socketFd - The file descriptor of the connected socket
+Socket::Socket(const sockaddr_in& addr, int socketFd)
+    : mSocket(socketFd)
+    , mSockAddrIn(addr)
+    , mState(State::Connected)
+{
+    mPort = ntohs(mSockAddrIn.sin_addr.s_addr);
+    mAddr = inet_ntoa(mSockAddrIn.sin_addr);
+}
+
 
 } // namespace Common
 

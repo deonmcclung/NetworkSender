@@ -11,7 +11,7 @@
 
 #include "Socket.h"
 
-#include <stdexcept>
+#include <exception>
 #include <sstream>
 
 namespace Common
@@ -21,7 +21,8 @@ namespace Common
      */
     class Socket::Exception : public std::exception
     {
-    public:
+    public: // Methods
+
         /// @brief Create an Exception object
         /// @param[in] ipAddr        - The IPv4 address desired for the socket
         /// @param[in] port          - The port for the socket (if 0, it is omitted in the description)
@@ -53,8 +54,19 @@ namespace Common
             return mMessage.c_str();
         }
 
-    private:
+    private: // Members
+
         std::string mMessage;                  ///< This is required because we must return a non-static string as a const char*
+
+    }; // Socket::Exception
+
+    class Socket::ConnectionRefusalException : public Exception
+    {
+    public: // Methods
+        ConnectionRefusalException(const std::string& ipAddr, uint16_t port)
+            : Exception(ipAddr, port, "Connection Refused")
+        {
+        }
     };
 
 } // namespace Common
