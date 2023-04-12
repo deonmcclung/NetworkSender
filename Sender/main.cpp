@@ -21,8 +21,48 @@
 
 using namespace std::literals::chrono_literals;
 
+static void sendStream(Common::Socket& senderSock, std::istream& input);
+static void connectWithRetries(Common::Socket& senderSock);
+static void sendInput(Common::Socket& senderSock, int argc, const char* const* argv);
 
-void sendStream(Common::Socket& senderSock, std::istream& input)
+//-----------------------------------------------------------------------------
+int main(int argc, const char* const* argv)
+{
+    if (argc < 2)
+    {
+        std::cout << "Usage: sender [<filename_to_send>]" << std::endl;
+        std::cout << "       sender -" << std::endl;
+        return 1;
+    }
+
+    int result = 1;
+
+    try
+    {
+        Common::Socket senderSock{SERVER_ADDR, SERVER_PORT};
+
+        connectWithRetries(senderSock);
+        
+        if (!senderSock.isConnected())
+        {
+            std::cerr << "Failed to connect." << std::endl;
+        }
+        else
+        {
+            sendInput(senderSock, argc, argv);
+            result = 0;    // Success
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+static void sendStream(Common::Socket& senderSock, std::istream& input)
 {
     constexpr size_t BUFFER_SIZE = 1024;
     std::array<char, BUFFER_SIZE> line;
@@ -40,7 +80,8 @@ void sendStream(Common::Socket& senderSock, std::istream& input)
     }
 }
 
-void connectWithRetries(Common::Socket& senderSock)
+//-----------------------------------------------------------------------------
+static void connectWithRetries(Common::Socket& senderSock)
 {
     constexpr int RETRIES = 5;
     for (int retry = 0; retry < RETRIES; ++retry)
@@ -60,47 +101,27 @@ void connectWithRetries(Common::Socket& senderSock)
     }
 }
 
-int main(int argc, const char* const* argv)
+//-----------------------------------------------------------------------------
+static void sendInput(Common::Socket& senderSock, int argc, const char* const* argv)
 {
-    if (argc < 2)
+    for (int input = 1; input < argc; ++input)
     {
-        std::cout << "Usage: sender [<filename_to_send>]" << std::endl;
-        std::cout << "       sender -" << std::endl;
-        return 1;
-    }
+        // Send either a file or stdin
 
-    try
-    {
-        Common::Socket senderSock{SERVER_ADDR, SERVER_PORT};
-
-        connectWithRetries(senderSock);
-        
-        if (!senderSock.isConnected())
+        if (std::strcmp(argv[input], "-") == 0)
         {
-            std::cerr << "Failed to connect." << std::endl;
+            // Just send stdin
+            sendStream(senderSock, std::cin);
+
+            // No files after '-'
+            break;
         }
         else
         {
-            // Send either a file or stdin
-
-            if (std::strcmp(argv[1], "-") == 0)
-            {
-                // Just send stdin
-                sendStream(senderSock, std::cin);
-            }
-            else
-            {
-                // Send the passed file
-                std::ifstream inputFile(argv[1]);
-                sendStream(senderSock, inputFile);
-            }
+            // Send the passed file
+            std::ifstream inputFile(argv[input]);
+            sendStream(senderSock, inputFile);
         }
     }
-    catch (const std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        return 1;
-    }
-
-    return 0;
 }
+

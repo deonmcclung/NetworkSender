@@ -14,11 +14,14 @@
 #include <iostream>
 #include <thread>
 
-void printBuffer(const void* buffer, size_t size)
+
+//----------------------------------------------------------------------------
+static void printBuffer(const void* buffer, size_t size)
 {
     std::cout.write(static_cast<const char*>(buffer), size);
 }
 
+//----------------------------------------------------------------------------
 int main(int argc, const char* const* argv)
 {
     try

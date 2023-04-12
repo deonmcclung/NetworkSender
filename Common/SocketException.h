@@ -23,10 +23,12 @@ namespace Common
     {
     public: // Methods
 
-        /// @brief Create an Exception object
-        /// @param[in] ipAddr        - The IPv4 address desired for the socket
-        /// @param[in] port          - The port for the socket (if 0, it is omitted in the description)
-        /// @param[in] errorStr      - A descriptive error message
+        /**
+         * @brief Create an Exception object
+         * @param[in] ipAddr         - The IPv4 address desired for the socket
+         * @param[in] port           - The port for the socket (if 0, it is omitted in the description)
+         * @param[in] errorStr       - A descriptive error message
+         */
         Exception(const std::string& ipAddr, uint16_t port, const std::string& errorStr)
         {
             std::ostringstream str;
@@ -40,15 +42,19 @@ namespace Common
             mMessage = str.str();
         }
 
-        /// @brief Create an Exception object
-        /// @param[in] ipAddr        - The IPv4 address desired for the socket
-        /// @param[in] errorStr      - A descriptive error message
+        /**
+         * @brief Create an Exception object
+         * @param[in] ipAddr         - The IPv4 address desired for the socket
+         * @param[in] errorStr       - A descriptive error message
+         */
         Exception(const std::string& ipAddr, const std::string& errorStr)
             : Exception(ipAddr, 0, errorStr)
         {
         }
 
-        /// @brief Override of std::exception::what
+        /**
+         * @brief Override of std::exception::what
+         */
         virtual const char* what() const noexcept override
         {
             return mMessage.c_str();
@@ -60,9 +66,17 @@ namespace Common
 
     }; // Socket::Exception
 
+    /**
+     * @brief Specialized socket exception for connection refusal
+     */
     class Socket::ConnectionRefusalException : public Exception
     {
     public: // Methods
+        /**
+         * @brief Create an ConnectionRefusalException object
+         * @param[in] ipAddr         - The IPv4 address desired for the socket
+         * @param[in] port           - The port for the socket (if 0, it is omitted in the description)
+         */
         ConnectionRefusalException(const std::string& ipAddr, uint16_t port)
             : Exception(ipAddr, port, "Connection Refused")
         {

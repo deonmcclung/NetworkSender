@@ -28,10 +28,12 @@ public: // Methods
     Receiver() = default;
     virtual ~Receiver() = default;
 
-    /// @brief Execute the receive operation
-    /// @param[in] addr     - The IP address on which to listen
-    /// @param[in] port     - The port on which to listen
-    /// @param[in] handler  - A handler function to be called repeatedly received data
+    /**
+     * @brief Execute the receive operation
+     * @param[in] addr      - The IP address on which to listen
+     * @param[in] port      - The port on which to listen
+     * @param[in] handler   - A handler function to be called repeatedly received data
+     */
     void execute(const std::string& addr, uint16_t port, Handler handler);
 
 private: // Definitions

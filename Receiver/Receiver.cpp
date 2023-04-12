@@ -63,9 +63,11 @@ void Receiver::execute(const std::string& addr, uint16_t port, Handler handler)
 // Private Methods
 //-----------------------------------------------------------------------------
 
-/// @internal
-/// @brief Thread to process the data coming in over the connected socket
-/// @param[in] data     - A reference to an object containing information for the thread.
+/**
+ * @internal
+ * @brief Thread to process the data coming in over the connected socket
+ * @param[in] data      - A reference to an object containing information for the thread.
+ */
 void Receiver::_connectionThread(std::unique_ptr<ConnThreadData> data)
 {
     auto& recvSocket = data->recvSocket;
@@ -73,6 +75,7 @@ void Receiver::_connectionThread(std::unique_ptr<ConnThreadData> data)
 
     try
     {
+        // Receive connections forever
         for (;;)
         {
             constexpr size_t BUFFER_SIZE = 1024;

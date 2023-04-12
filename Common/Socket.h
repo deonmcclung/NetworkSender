@@ -39,11 +39,12 @@ namespace Common
         static constexpr int DEFAULT_BACKLOG = 10;       
 
     public: // Methods
-
-        /// @brief Construct a Socket
-        /// @param[in] ipAddr   - The IPv4 address to use for the socket
-        /// @param[in] port     - The port to use for the socket
-        /// @throws Socket::Exception on failure
+        /**
+         * @brief Construct a Socket
+         * @param[in] ipAddr    - The IPv4 address to use for the socket
+         * @param[in] port      - The port to use for the socket
+         * @throws Socket::Exception on failure
+         */
         explicit Socket(const std::string& ipAddr, uint16_t port);
 
         /// @brief Move construction is supported
@@ -54,44 +55,58 @@ namespace Common
 
         virtual ~Socket();
 
-        /// @brief Bind the socket to the address and port
-        /// @throws Socket::Exception on failure
+        /**
+         * @brief Bind the socket to the address and port
+         * @throws Socket::Exception on failure
+         */
         void bind();
 
-        /// @brief Set the socket to listen mode
-        /// @param[in] backlog  - The maximum number of connections to queue on the socket
-        /// @throws Socket::Exception on failure
+        /**
+         * @brief Set the socket to listen mode
+         * @param[in] backlog   - The maximum number of connections to queue on the socket
+         * @throws Socket::Exception on failure
+         */
         void listen(int backlog = DEFAULT_BACKLOG);
 
-        /// @brief Accept a connection from the listening queue
-        /// @return A connected Socket object if successful, or an empty result if
-        ///           the socket was terminated.
-        /// @throws Socket::Exception on failure
+        /**
+         * @brief Accept a connection from the listening queue
+         * @return A connected Socket object if successful, or an empty result if
+         *           the socket was terminated.
+         * @throws Socket::Exception on failure
+         */
         std::optional<Socket> accept();
 
-        /// @brief Connect to a listening socket
-        /// @throws Socket::ConnectionException on refusal
-        /// @throws Socket::Exception on failure
+        /**
+         * @brief Connect to a listening socket
+         * @throws Socket::ConnectionException on refusal
+         * @throws Socket::Exception on failure
+         */
         void connect();
 
-        /// @brief Determine whether the socket is connected
-        /// @return True if the socket is in the connected state; otherwise false.
+        /**
+         * @brief Determine whether the socket is connected
+         * @return True if the socket is in the connected state; otherwise false.
+         */
         bool isConnected() const noexcept;
 
-        /// @brief Write some bytes to the socket
-        /// @param[in] buffer   - A pointer to the buffer to write, should be at least 'len' bytes.
-        /// @param[in] len      - The length of the buffer pointed to by 'buffer', in bytes.
-        /// @throws Socket::Exception on failure
-        /// @details Note: This is a blocking operation (which may be relevant if 'len' is large).
+        /**
+         * @brief Write some bytes to the socket
+         * @param[in] buffer    - A pointer to the buffer to write, should be at least 'len' bytes.
+         * @param[in] len       - The length of the buffer pointed to by 'buffer', in bytes.
+         * @throws Socket::Exception on failure
+         * @details Note: This is a blocking operation (which may be relevant if 'len' is large).
+         */
         void send(const void* buffer, size_t len);
 
-        /// @brief Read data from the socket and place it in a buffer
-        /// @param[out] buffer  - A pointer to the buffer to receive the data, should be at
-        ///                         least 'len' bytes
-        /// @param[in]  len     - The length of the buffer pointed to by 'buffer', in bytes.
-        /// @return The number of bytes read, or unset if disconnected.
-        /// @throws Socket::Exception on failure
-        /// @details Note: This function blocks while waiting for desired length of data.
+        /**
+         * @brief Read data from the socket and place it in a buffer
+         * @param[out] buffer   - A pointer to the buffer to receive the data, should be at
+         *                         least 'len' bytes
+         * @param[in]  len      - The length of the buffer pointed to by 'buffer', in bytes.
+         * @return The number of bytes read, or unset if disconnected.
+         * @throws Socket::Exception on failure
+         * @details Note: This function blocks while waiting for desired length of data.
+         */
         std::optional<size_t> recv(void* buffer, size_t len);
 
     private: // Definitions
