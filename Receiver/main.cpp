@@ -9,6 +9,8 @@
 
 #include "Receiver.h"
 
+#include "Common/CommonData.h"
+
 #include <iostream>
 #include <thread>
 
@@ -23,7 +25,7 @@ int main(int argc, const char* const* argv)
     {
         Receiver receiver;
 
-        receiver.execute("127.0.0.1", 56743, printBuffer);
+        receiver.execute(SERVER_ADDR, SERVER_PORT, printBuffer);
     }
     catch (const std::exception& e)
     {

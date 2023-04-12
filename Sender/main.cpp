@@ -8,12 +8,18 @@
  */
 
 #include "Common/Socket.h"
+#include "Common/SocketException.h"
+#include "Common/CommonData.h"
 
 #include <iostream>
 #include <fstream>
 #include <array>
 #include <cstring>
 #include <cmath>
+#include <thread>
+#include <chrono>
+
+using namespace std::literals::chrono_literals;
 
 
 void sendStream(Common::Socket& senderSock, std::istream& input)
@@ -34,6 +40,26 @@ void sendStream(Common::Socket& senderSock, std::istream& input)
     }
 }
 
+void connectWithRetries(Common::Socket& senderSock)
+{
+    constexpr int RETRIES = 5;
+    for (int retry = 0; retry < RETRIES; ++retry)
+    {
+        try
+        {
+            senderSock.connect();
+            break;
+        }
+        catch (const Common::Socket::ConnectionRefusalException& e)
+        {
+            std::cout << "Cannot connect to server. Retrying..." << std::endl;
+
+            // Wait a second before trying again
+            std::this_thread::sleep_for(1s);
+        }
+    }
+}
+
 int main(int argc, const char* const* argv)
 {
     if (argc < 2)
@@ -45,12 +71,18 @@ int main(int argc, const char* const* argv)
 
     try
     {
-        Common::Socket senderSock{"127.0.0.1", 56743};
+        Common::Socket senderSock{SERVER_ADDR, SERVER_PORT};
 
-        senderSock.connect();
-       
-        if (argc > 1)
+        connectWithRetries(senderSock);
+        
+        if (!senderSock.isConnected())
         {
+            std::cerr << "Failed to connect." << std::endl;
+        }
+        else
+        {
+            // Send either a file or stdin
+
             if (std::strcmp(argv[1], "-") == 0)
             {
                 // Just send stdin

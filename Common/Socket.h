@@ -23,6 +23,9 @@
 
 namespace Common
 {
+    /**
+     * @brief A class to abstract socket function in a more C++ friendly way.
+     */
     class Socket
     {
         Socket(const Socket&) = delete;
@@ -32,7 +35,8 @@ namespace Common
         class Exception;
         class ConnectionRefusalException;
 
-        static constexpr int DEFAULT_BACKLOG = 10;
+        /// This is the default maximum connections to queue for the socket 
+        static constexpr int DEFAULT_BACKLOG = 10;       
 
     public: // Methods
 
@@ -69,6 +73,10 @@ namespace Common
         /// @throws Socket::ConnectionException on refusal
         /// @throws Socket::Exception on failure
         void connect();
+
+        /// @brief Determine whether the socket is connected
+        /// @return True if the socket is in the connected state; otherwise false.
+        bool isConnected() const noexcept;
 
         /// @brief Write some bytes to the socket
         /// @param[in] buffer   - A pointer to the buffer to write, should be at least 'len' bytes.
@@ -107,5 +115,12 @@ namespace Common
         struct sockaddr_in  mSockAddrIn;
 
     }; // class Socket
-    
+
+
+    //-----------------------------------------------------------------------------
+    inline bool Socket::isConnected() const noexcept
+    {
+        return mState == State::Connected;
+    }
+
 } // namespace Common

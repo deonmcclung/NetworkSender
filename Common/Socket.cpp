@@ -16,7 +16,6 @@
 #include <sstream>
 #include <cstring>
 #include <cassert>
-#include <iostream>
 
 
 namespace Common
@@ -29,6 +28,7 @@ Socket::Socket(const std::string& ipAddr, uint16_t port)
 {
     std::memset(&mSockAddrIn, 0, sizeof(mSockAddrIn));
 
+    // Create the underlying socket object
     mSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (mSocket < 0)
     {
@@ -37,7 +37,7 @@ Socket::Socket(const std::string& ipAddr, uint16_t port)
         throw Exception(ipAddr, str.str());
     }
 
-    // Check the address for validity here, for early failure.
+    // Convert the address and check for validity here, for early failure.
     
     mSockAddrIn.sin_family = AF_INET;
     if (inet_aton(mAddr.c_str(), &mSockAddrIn.sin_addr) == 0)
@@ -53,6 +53,8 @@ Socket::Socket(const std::string& ipAddr, uint16_t port)
 //-----------------------------------------------------------------------------
 Socket::Socket(Socket&& rhs) noexcept
 {
+    // Call the move assignment operator so we only have to
+    // list individual members once.
     *this = std::move(rhs);
 }
 
@@ -60,6 +62,10 @@ Socket::Socket(Socket&& rhs) noexcept
 Socket& Socket::operator =(Socket&& rhs) noexcept
 {
     mSocket = rhs.mSocket;
+
+    // This line is the reason for spelling this method out (i.e. not 'default').
+    // It is necessary to mark the resource as moved so that the destructor
+    // doesn't close the handle.
     rhs.mSocket = -1;       // The resource is moved
     
     mAddr = std::move(rhs.mAddr);
@@ -102,6 +108,7 @@ void Socket::bind()
         throw Exception(mAddr, mPort, str.str());
     }
 
+    // Reflect that the socket is bound
     mState = State::Bound;
 }
 
@@ -156,6 +163,7 @@ std::optional<Socket> Socket::accept()
         // On success...
        
         // Initialize the result socket with the connection information.
+        // (calling the private constructor)
         result = Socket(addr, acceptResult);
     }
 
@@ -172,6 +180,8 @@ void Socket::connect()
 
     if (::connect(mSocket, reinterpret_cast<sockaddr*>(&mSockAddrIn), sizeof(mSockAddrIn)) < 0)
     {
+        // On error...
+        
         if (errno == ECONNREFUSED)
         {
             // Throw a little addition type information around this condition
@@ -203,6 +213,7 @@ void Socket::send(const void* buffer, size_t len)
 
     if (::send(mSocket, buffer, len, 0) < 0)
     {
+        // On failure...
         std::ostringstream str;
         str << "Error while writing: " << std::strerror(errno);
         throw Exception(mAddr, mPort, str.str());
@@ -258,10 +269,13 @@ Socket::Socket(const sockaddr_in& addr, int socketFd)
     , mSockAddrIn(addr)
     , mState(State::Connected)
 {
+    // This private constuctor is necessary because the public constructor
+    // creates a socket object, which we do not want in the case of an
+    // accepted connection.
+
     mPort = ntohs(mSockAddrIn.sin_addr.s_addr);
     mAddr = inet_ntoa(mSockAddrIn.sin_addr);
 }
-
 
 } // namespace Common
 
