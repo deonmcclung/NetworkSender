@@ -4,7 +4,7 @@
  * @file Receiver.cpp
  *
  * @author Deon McClung
- * @copyright 2023, Deon McClung, All rights reserved.
+ * @copyright 2023, Deon McClung, All rights reserved. See LICENSE in the repository root.
  */
 
 #include "Receiver.h"
