@@ -1,3 +1,6 @@
 [submodule "external/fff"]
 	path = external/fff
 	url = git@github.com:meekrosoft/fff.git
+[submodule "external/MockVendor"]
+	path = external/MockVendor
+	url = git@github.com:deonmcclung/MockVendor.git
