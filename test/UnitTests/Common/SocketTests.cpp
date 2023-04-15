@@ -31,12 +31,12 @@ protected: // Definitions
     static constexpr uint16_t TEST_PORT = 51234;
 
 protected: // Methods
-    explicit SocketTests(bool noConstruct = false)
+    explicit SocketTests(bool construct = true)
     {
         FFF_RESET_HISTORY()
         RESET_FAKES
 
-        if (!noConstruct)
+        if (construct)
         {
             mTestObj = std::make_unique<Common::Socket>(TEST_IP, TEST_PORT);
         }
@@ -52,9 +52,11 @@ class SocketTestsNC : public SocketTests
 {
 protected: // Methods
     SocketTestsNC()
-        : SocketTests(true)
+        : SocketTests(false)
     {
     }
+
+    virtual ~SocketTestsNC() = default;
 };
 
 // Test for handling of valid and invalid arguments to the constuctor.

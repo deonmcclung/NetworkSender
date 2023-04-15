@@ -26,13 +26,15 @@ function(add_unit_test testName)
     string(REPLACE "/" "__" testTargetName ${testName})
     string(PREPEND testTargetName test_)
     add_executable(${testTargetName} test/UnitTests/${testName}.cpp)
-    target_link_libraries(${testTargetName} GTest::gtest_main)
+    target_link_libraries(${testTargetName} GTest::gmock_main)
     target_include_directories(${testTargetName}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/MockVendor
     )
     gtest_discover_tests(${testTargetName})
 endfunction()
 
 add_unit_test(Common/SocketTests)
+add_unit_test(Receiver/ReceiverTests)

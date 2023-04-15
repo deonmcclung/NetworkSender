@@ -204,6 +204,12 @@ void Socket::connect()
 }
 
 //-----------------------------------------------------------------------------
+bool Socket::isConnected() const noexcept
+{
+    return mState == State::Connected;
+}
+
+//-----------------------------------------------------------------------------
 void Socket::send(const void* buffer, size_t len)
 {
     if (mState != State::Connected)
