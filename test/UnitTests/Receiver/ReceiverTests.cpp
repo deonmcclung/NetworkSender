@@ -50,7 +50,7 @@ protected: // Methods
 protected: // Members
     std::unique_ptr<Receiver>               mTestObj;
     Common::SocketMockVendor                mSocketMockVendor;
-    std::shared_ptr<NiceMock<Common::SocketMock>>   mSocketMock{ std::make_shared<NiceMock<Common::SocketMock>>() };
+    std::shared_ptr<Common::SocketMock>     mSocketMock{ std::make_shared<NiceMock<Common::SocketMock>>() };
 };
 
 

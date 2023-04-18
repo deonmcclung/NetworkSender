@@ -30,7 +30,7 @@ public:
     MOCK_METHOD(std::optional<size_t>, recv, (void* buffer, size_t len));
 };
 
-using SocketMockVendor = MockVendor<testing::NiceMock<SocketMock>, Socket>;
+using SocketMockVendor = MockVendor<SocketMock, Socket>;
 
 Socket::Socket(const std::string& ipAddr, uint16_t port)
 {
