@@ -1,7 +1,19 @@
 # NetworkSender
 Sample Socket Code in C++
 
-Build by executing make in the repository root.
+Build by executing make in the repository root:
+
+**CMake installed:**
+
+mkdir build
+cd build
+cmake ..
+make
+
+
+**w/o CMake**
+make
+
 
 The binaries will be built into the repository root.
 

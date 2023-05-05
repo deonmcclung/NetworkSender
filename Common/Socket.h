@@ -45,7 +45,7 @@ namespace Common
          * @param[in] port      - The port to use for the socket
          * @throws Socket::Exception on failure
          */
-        explicit Socket(const std::string& ipAddr, uint16_t port);
+        Socket(const std::string& ipAddr, uint16_t port);
 
         /// @brief Move construction is supported
         Socket(Socket&& rhs) noexcept;
@@ -130,12 +130,5 @@ namespace Common
         struct sockaddr_in  mSockAddrIn;
 
     }; // class Socket
-
-
-    //-----------------------------------------------------------------------------
-    inline bool Socket::isConnected() const noexcept
-    {
-        return mState == State::Connected;
-    }
 
 } // namespace Common
