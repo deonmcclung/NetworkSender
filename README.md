@@ -12,7 +12,7 @@ make
 
 
 **w/o CMake**
-make -f Makefile.orig
+make
 
 
 The binaries will be built into the repository root.
