@@ -3,6 +3,11 @@ project(NETWORKSENDER)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Default to Debug type build
+if ("${CMAKE_BUILD_BUILD}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 add_executable(sender Sender/main.cpp Common/Socket.cpp)
 target_include_directories(sender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -10,7 +15,9 @@ target_include_directories(sender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(receiver Receiver/main.cpp Receiver/Receiver.cpp Common/Socket.cpp)
 target_include_directories(receiver PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-if (EXISTS external/MockVendor/LICENCE AND EXISTS external/fff/LICENSE)
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/MockVendor/LICENSE
+        AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/fff/LICENSE)
+
     enable_testing()
 
     include(FetchContent)

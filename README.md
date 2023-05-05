@@ -28,3 +28,16 @@ Ctrl-C to exit the receiver.
 or
 
 cat test.txt | ./sender -
+
+**Running the Unit Tests**
+The unit tests require CMake to build.
+With CMake installed,
+
+git submodule init
+git submodule update
+
+(follow CMake build instructions)
+
+From the build directory, after building, execute:
+
+ctest
