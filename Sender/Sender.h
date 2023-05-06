@@ -17,6 +17,7 @@
 #include <exception>
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 
 /**

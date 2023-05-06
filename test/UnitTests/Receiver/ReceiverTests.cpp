@@ -10,12 +10,13 @@
 // Mocks
 #include "Common/Mocks/SocketMock.h"
 
-// Class under test
+// Code under test
 #include "Receiver/Receiver.cpp"
 
-
+// Library headers
 #include <gtest/gtest.h>
 
+// Standard headers
 #include <memory>
 #include <sstream>
 #include <condition_variable>

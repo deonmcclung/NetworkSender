@@ -46,5 +46,6 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/MockVendor/LICENSE
 
     add_unit_test(Common/SocketTests)
     add_unit_test(Receiver/ReceiverTests)
+    add_unit_test(Sender/SenderTests)
 
 endif()
