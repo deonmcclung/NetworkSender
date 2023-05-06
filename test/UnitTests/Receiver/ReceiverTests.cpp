@@ -54,6 +54,8 @@ protected: // Members
 };
 
 
+// Test expected bahaviors while receiving a connection. This test exercises expected behaviors for
+// receiving a connection and receiving a multi-line message that is broken up into multiple send calls.
 TEST_F(ReceiverTests, TestReceiveConnection)
 {
     auto connSocketMock = std::make_shared<NiceMock<Common::SocketMock>>();

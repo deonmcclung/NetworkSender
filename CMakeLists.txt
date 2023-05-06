@@ -8,7 +8,7 @@ if ("${CMAKE_BUILD_BUILD}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-add_executable(sender Sender/main.cpp Common/Socket.cpp)
+add_executable(sender Sender/main.cpp Sender/Sender.cpp Common/Socket.cpp)
 target_include_directories(sender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 

@@ -7,23 +7,9 @@
  * @copyright 2023, Deon McClung, All rights reserved. See LICENSE in the repository root.
  */
 
-#include "Common/Socket.h"
-#include "Common/SocketException.h"
-#include "Common/CommonData.h"
+#include "Sender.h"
 
-#include <iostream>
-#include <fstream>
-#include <array>
-#include <cstring>
-#include <cmath>
-#include <thread>
-#include <chrono>
-
-using namespace std::literals::chrono_literals;
-
-static void sendStream(Common::Socket& senderSock, std::istream& input);
-static void connectWithRetries(Common::Socket& senderSock);
-static void sendInput(Common::Socket& senderSock, int argc, const char* const* argv);
+#include <exception>
 
 //-----------------------------------------------------------------------------
 int main(int argc, const char* const* argv)
@@ -39,19 +25,9 @@ int main(int argc, const char* const* argv)
 
     try
     {
-        Common::Socket senderSock{SERVER_ADDR, SERVER_PORT};
+        Sender sender;
 
-        connectWithRetries(senderSock);
-        
-        if (!senderSock.isConnected())
-        {
-            std::cerr << "Failed to connect." << std::endl;
-        }
-        else
-        {
-            sendInput(senderSock, argc, argv);
-            result = 0;    // Success
-        }
+        sender.execute(argc, argv);
     }
     catch (const std::exception& e)
     {
@@ -61,67 +37,4 @@ int main(int argc, const char* const* argv)
     return result;
 }
 
-//-----------------------------------------------------------------------------
-static void sendStream(Common::Socket& senderSock, std::istream& input)
-{
-    constexpr size_t BUFFER_SIZE = 1024;
-    std::array<char, BUFFER_SIZE> line;
-    // Subtract 1 to make room for a newline
-    while (input.getline(line.data(), line.size() - 1))
-    {
-        // Note: line is NOT terminated
-        
-        // Add one more character in the send count for the newline
-        auto dataToSend = std::min(static_cast<size_t>(input.gcount()), line.size() - 1) + 1;
-        line[dataToSend - 1] = '\n';         // Replace the newline as the last character
-
-        // Send it over the connection
-        senderSock.send(line.data(), dataToSend);
-    }
-}
-
-//-----------------------------------------------------------------------------
-static void connectWithRetries(Common::Socket& senderSock)
-{
-    constexpr int RETRIES = 5;
-    for (int retry = 0; retry < RETRIES; ++retry)
-    {
-        try
-        {
-            senderSock.connect();
-            break;
-        }
-        catch (const Common::Socket::ConnectionRefusalException& e)
-        {
-            std::cout << "Cannot connect to server. Retrying..." << std::endl;
-
-            // Wait a second before trying again
-            std::this_thread::sleep_for(1s);
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
-static void sendInput(Common::Socket& senderSock, int argc, const char* const* argv)
-{
-    for (int input = 1; input < argc; ++input)
-    {
-        // Send either a file or stdin
-
-        if (std::strcmp(argv[input], "-") == 0)
-        {
-            // Just send stdin
-            sendStream(senderSock, std::cin);
-
-            // No files after '-'
-            break;
-        }
-        else
-        {
-            // Send the passed file
-            std::ifstream inputFile(argv[input]);
-            sendStream(senderSock, inputFile);
-        }
-    }
-}
 
