@@ -185,3 +185,58 @@ TEST_F(SenderTests, ParseCommandLineTrailingFiles)
         EXPECT_STREQ("File2", data.filesToSend[1].c_str());
     }
 }
+
+// Test the sendStream method sends a multi-line input in individual lines
+TEST_F(SenderTests, TestSendStreamMultiLineInput)
+{
+    // Setup
+    const char* lines[] =
+    {
+        "This is the first line\n",
+        "This is the second line\n",
+        "This is the third line\n",
+    };
+
+    std::ostringstream str;
+    for (const auto& line : lines)
+    {
+        str << line;
+    }
+
+    std::istringstream istr(str.str());
+
+    ON_CALL(*mSocketMock, isConnected()).WillByDefault(Return(true));
+
+    EXPECT_CALL(*mSocketMock, send(_, _))
+        .WillOnce([&lines](const void* buffer, size_t len)
+        {
+            auto str = std::string(static_cast<const char*>(buffer), len);
+            EXPECT_STREQ(lines[0], str.c_str());
+            EXPECT_EQ(std::strlen(lines[0]), len);
+        })
+        .WillOnce([&lines](const void* buffer, size_t len)
+        {
+            auto str = std::string(static_cast<const char*>(buffer), len);
+            EXPECT_STREQ(lines[1], str.c_str());
+            EXPECT_EQ(std::strlen(lines[1]), len);
+        })
+        .WillOnce([&lines](const void* buffer, size_t len)
+        {
+            auto str = std::string(static_cast<const char*>(buffer), len);
+            EXPECT_STREQ(lines[2], str.c_str());
+            EXPECT_EQ(std::strlen(lines[2]), len);
+        });
+
+    // for (const auto& line : lines)
+    // {
+    //     std::cout << line << std::endl;
+    //     EXPECT_CALL(*mSocketMock, send(_, _)).WillOnce([&line](const void* buffer, size_t len)
+    //     {
+    //         auto str = static_cast<const char*>(buffer);
+    //         EXPECT_STREQ(line, str);
+    //         EXPECT_EQ(std::strlen(line), len);
+    //     });
+    // }
+
+    EXPECT_NO_THROW(mTestObj->sendStream(istr));
+}

@@ -102,8 +102,7 @@ void Sender::sendStream(std::istream& input)
     {
         // Note: line is NOT terminated
 
-        // Add one more character in the send count for the newline
-        auto dataToSend = std::min(static_cast<size_t>(input.gcount()), line.size() - 1) + 1;
+        auto dataToSend = std::min(static_cast<size_t>(input.gcount()), line.size() - 1);
         line[dataToSend - 1] = '\n';         // Replace the newline as the last character
 
         // Send it over the connection
