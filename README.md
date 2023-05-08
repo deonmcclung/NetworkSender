@@ -21,20 +21,20 @@ The receiver executable should be run first, but the sender will retry for a few
 
 Ctrl-C to exit the receiver.
 
-./receiver
+`./receiver`
 
-./sender test.txt
+`./sender test.txt`
 
 or
 
-cat test.txt | ./sender -
+`cat test.txt | ./sender -`
 
 **Running the Unit Tests**
 The unit tests require CMake to build.
 With CMake installed,
 
-git submodule init
-git submodule update
+`git submodule init`
+`git submodule update`
 
 (follow CMake build instructions)
 
